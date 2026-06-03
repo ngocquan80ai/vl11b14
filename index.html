@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Học liệu Tương tác: Bài 14 - Bài tập về sóng</title>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuedraggable@next/dist/vuedraggable.umd.min.js"></script>
+
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            startup: { typeset: false } 
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        .animate-fade-in { animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        [v-cloak] { display: none; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+
+<body class="bg-slate-50 font-sans text-gray-800 p-4 md:p-8 min-h-screen overflow-x-hidden">
+    <div id="app" v-cloak class="max-w-6xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden p-6 md:p-8 border border-slate-100">
+        
+        <h1 class="text-3xl font-extrabold text-center text-blue-700 mb-2 uppercase tracking-wide">Bài 14: Bài Tập Về Sóng</h1>
+        <p class="text-center text-gray-500 mb-8 font-medium">Khai thác đồ thị kép và Vận dụng hệ thức $v = \lambda \cdot f$</p>
+
+        <div class="flex flex-wrap justify-center mb-8 bg-slate-100 p-1 rounded-lg shadow-inner gap-2">
+            <button v-for="tab in tabs" :key="tab.id" @click="selectTab(tab.id)"
+                :class="['px-6 py-3 rounded-md font-semibold text-sm md:text-base transition-all duration-300 whitespace-nowrap',
+                         activeTab === tab.id ? 'bg-blue-600 text-white shadow-md transform scale-105' : 'text-gray-600 hover:bg-blue-100 hover:text-blue-800']">
+                {{ tab.name }}
+            </button>
+        </div>
+
+        <div class="animate-fade-in min-h-[400px]">
+            
+            <div v-show="activeTab === 1">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 border-l-4 border-blue-500 pl-3">Khởi động: Nhận diện Kĩ năng Giải bài tập</h2>
+                <p class="mb-6 text-gray-600 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <strong>Nhiệm vụ:</strong> Phân loại các đại lượng đặc trưng được trích xuất từ đúng loại đồ thị, và chọn các hệ thức thuộc "Tam giác công thức".
+                </p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-slate-100 p-4 rounded-xl border-2 border-dashed border-slate-300">
+                        <h3 class="font-bold text-center mb-4 text-slate-600">Kho thẻ bài tập</h3>
+                        <draggable v-model="poolItems" group="waveConcepts" item-key="id" class="flex flex-col gap-3 min-h-[150px]">
+                            <template #item="{element}">
+                                <div class="p-3 bg-white border border-gray-300 rounded-lg shadow-sm font-medium cursor-pointer hover:shadow-md hover:border-blue-400 transition-all text-center">
+                                    <span v-html="element.name"></span>
+                                </div>
+                            </template>
+                        </draggable>
+                        <p v-if="poolItems.length === 0" class="text-center text-green-600 font-bold mt-4">🎉 Bạn đã hoàn thành phân loại kĩ năng!</p>
+                    </div>
+
+                    <div class="flex flex-col gap-4">
+                        <div v-for="zone in conceptZones" :key="zone.id" :class="['p-4 rounded-xl border-2', zone.bgClass]">
+                            <h3 class="font-bold mb-2 text-sm uppercase tracking-wide text-gray-700">{{ zone.title }}</h3>
+                            <draggable v-model="zone.items" group="waveConcepts" item-key="id" class="flex flex-col gap-2 min-h-[60px] bg-white bg-opacity-60 rounded-lg p-2">
+                                <template #item="{element}">
+                                    <div :class="['p-3 rounded-lg shadow-sm font-medium border-l-4 flex justify-between items-center text-sm', 
+                                                 element.correctZone === zone.id ? 'bg-green-50 border-green-500 text-green-800' : 'bg-red-50 border-red-500 text-red-800']">
+                                        <span v-html="element.name"></span>
+                                        <span v-if="element.correctZone === zone.id" class="text-green-600 font-bold whitespace-nowrap ml-2">✔️ Chuẩn</span>
+                                        <span v-else class="text-red-600 font-bold text-xs whitespace-nowrap ml-2">❌ Sai</span>
+                                    </div>
+                                </template>
+                            </draggable>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-show="activeTab === 2">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 border-l-4 border-indigo-500 pl-3">Trọng tâm: Phương pháp giải bài tập</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <div class="bg-white p-5 rounded-xl border border-indigo-100 shadow-sm hover:shadow-md transition-shadow">
+                        <h3 class="text-lg font-bold text-indigo-700 mb-3 uppercase text-sm">1. Tam giác công thức</h3>
+                        <p class="text-gray-700 leading-relaxed text-sm mb-4">
+                            Sử dụng phương pháp che đại lượng khuyết để suy luận phép toán biến đổi:
+                        </p>
+                        <ul class="list-disc pl-5 text-gray-700 space-y-2 font-medium bg-indigo-50 p-4 rounded-lg">
+                            <li>Che Tốc độ ($v$): $$v = \lambda \cdot f = \frac{\lambda}{T}$$</li>
+                            <li>Che Bước sóng ($\lambda$): $$\lambda = \frac{v}{f} = v \cdot T$$</li>
+                            <li>Che Tần số ($f$): $$f = \frac{v}{\lambda}$$</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-blue-100 shadow-sm hover:shadow-md transition-shadow">
+                        <h3 class="text-lg font-bold text-blue-700 mb-3 uppercase text-sm">2. Khai thác dữ liệu từ Đồ thị</h3>
+                        <ul class="list-disc pl-5 text-gray-700 space-y-3 text-sm">
+                            <li>
+                                <strong>Đồ thị Không gian $(u - x)$:</strong> Trục hoành là Khoảng cách ($x$). 
+                                Khoảng cách giữa 2 đỉnh sóng liên tiếp là <span class="font-bold text-blue-600">Bước sóng $\lambda$</span>.
+                            </li>
+                            <li>
+                                <strong>Đồ thị Thời gian $(u - t)$:</strong> Trục hoành là Thời gian ($t$). 
+                                Thời gian giữa 2 đỉnh sóng liên tiếp là <span class="font-bold text-blue-600">Chu kì $T$</span>.
+                            </li>
+                            <li class="italic text-gray-500">Lưu ý: Khoảng cách từ một đỉnh đến lõm kề sát chỉ là $\frac{\lambda}{2}$ hoặc $\frac{T}{2}$.</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-red-50 p-5 rounded-xl border border-red-200 shadow-sm hover:shadow-md transition-shadow md:col-span-2">
+                        <h3 class="text-lg font-bold text-red-700 mb-2 uppercase text-sm">3. Cảnh báo Lỗi Đơn Vị Đo Lường (Bẫy kinh điển)</h3>
+                        <p class="text-red-900 text-sm">
+                            Nếu bước sóng $\lambda$ được đo bằng <strong>$\text{cm}$</strong> và tần số $f$ đo bằng <strong>$\text{Hz}$</strong>, 
+                            thì kết quả của phép nhân $v = \lambda \cdot f$ sẽ tự động mang đơn vị <strong>$\text{cm/s}$</strong>. 
+                            <br><br>
+                            <em>Bạn bắt buộc phải chia kết quả cho $100$ để quy đổi về chuẩn hệ SI là <strong>$\text{m/s}$</strong> trước khi so sánh với đáp án trắc nghiệm.</em>
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+            <div v-show="activeTab === 3">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 border-l-4 border-teal-500 pl-3">Mô phỏng Khai thác dữ liệu Đồ thị Kép</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                    <div class="lg:col-span-3 bg-white p-4 rounded-xl border border-gray-200 shadow-md flex flex-col">
+                        <div class="bg-gray-100 p-2 rounded-lg flex justify-center gap-4 mb-4">
+                            <label class="flex items-center gap-2 cursor-pointer font-bold">
+                                <input type="radio" value="ux" v-model="chartMode" @change="switchChartMode" class="accent-teal-600"> 
+                                <span :class="chartMode === 'ux' ? 'text-teal-700' : 'text-gray-500'">Đồ thị Không gian $(u - x)$</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer font-bold">
+                                <input type="radio" value="ut" v-model="chartMode" @change="switchChartMode" class="accent-teal-600"> 
+                                <span :class="chartMode === 'ut' ? 'text-teal-700' : 'text-gray-500'">Đồ thị Thời gian $(u - t)$</span>
+                            </label>
+                        </div>
+                        
+                        <div class="mb-4 px-2 animate-fade-in" v-show="chartMode === 'ux'">
+                            <label class="flex justify-between font-bold text-sm text-gray-700 mb-1">
+                                <span>Kéo thay đổi Bước sóng ($\lambda$)</span>
+                                <span class="text-teal-600">{{ simLambda }} m</span>
+                            </label>
+                            <input type="range" v-model.number="simLambda" @input="updateWaveChart" min="0.5" max="5" step="0.1" class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-teal-600">
+                        </div>
+
+                        <div class="mb-4 px-2 animate-fade-in" v-show="chartMode === 'ut'">
+                            <label class="flex justify-between font-bold text-sm text-gray-700 mb-1">
+                                <span>Kéo thay đổi Tần số ($f$)</span>
+                                <span class="text-blue-600">{{ simF }} Hz</span>
+                            </label>
+                            <input type="range" v-model.number="simF" @input="updateWaveChart" min="0.5" max="5" step="0.1" class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                        </div>
+
+                        <div class="relative w-full h-64 md:h-80 flex-grow">
+                            <canvas id="dualWaveChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center">
+                        <h3 class="font-bold text-lg text-slate-800 text-center mb-6 uppercase tracking-wide border-b pb-2">Tiến trình giải bài tập</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="bg-white p-3 rounded-lg border-l-4 border-teal-500 shadow-sm">
+                                <p class="text-sm text-gray-500 mb-1">Bước 1: Trích xuất Đồ thị $(u-x)$</p>
+                                <p class="font-bold text-teal-800">$\lambda = {{ simLambda }}\text{ m}$</p>
+                            </div>
+
+                            <div class="bg-white p-3 rounded-lg border-l-4 border-blue-500 shadow-sm">
+                                <p class="text-sm text-gray-500 mb-1">Bước 2: Trích xuất Đồ thị $(u-t)$</p>
+                                <p class="font-bold text-blue-800">$T = {{ simT }}\text{ s} \Longrightarrow f = {{ simF }}\text{ Hz}$</p>
+                            </div>
+
+                            <div class="bg-purple-100 p-4 rounded-lg border-2 border-purple-300 shadow text-center mt-6">
+                                <p class="text-sm font-bold text-purple-700 uppercase mb-2">Bước 3: Vận dụng Tam giác công thức</p>
+                                <div class="text-2xl font-extrabold text-purple-900 bg-white py-2 rounded shadow-inner">
+                                    $v = {{ simV }}\text{ m/s}$
+                                </div>
+                                <p class="text-xs mt-2 text-purple-800 italic">($v = \lambda \cdot f$)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-show="activeTab === 4">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 border-l-4 border-purple-500 pl-3">Luyện tập Vận dụng (Trích Bài 14 SGK)</h2>
+                
+                <div class="space-y-6">
+                    <div v-for="(q, index) in quizData" :key="q.id" class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Câu {{ index + 1 }}: <span v-html="q.question"></span></h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <button v-for="opt in q.options" :key="opt.key"
+                                @click="selectAnswer(q.id, opt.key)"
+                                :disabled="userAnswers[q.id]"
+                                :class="[
+                                    'p-4 rounded-xl border-2 text-left transition-all duration-200 relative overflow-hidden',
+                                    !userAnswers[q.id] ? 'border-slate-200 hover:border-blue-400 hover:bg-blue-50/50' : '',
+                                    userAnswers[q.id] === opt.key && opt.key !== q.correctAnswer ? 'border-red-500 bg-red-50 text-red-700' : '',
+                                    userAnswers[q.id] && opt.key === q.correctAnswer ? 'border-green-500 bg-green-50 text-green-800' : '',
+                                    userAnswers[q.id] && userAnswers[q.id] !== opt.key && opt.key !== q.correctAnswer ? 'border-slate-200 opacity-50 bg-slate-50' : ''
+                                ]">
+                                <div class="flex items-start">
+                                    <span class="font-bold mr-3 min-w-[24px]" :class="[
+                                        userAnswers[q.id] === opt.key && opt.key !== q.correctAnswer ? 'text-red-700' : '',
+                                        userAnswers[q.id] && opt.key === q.correctAnswer ? 'text-green-700' : 'text-blue-700'
+                                    ]">{{ opt.key }}.</span>
+                                    <span v-html="opt.text" class="flex-1"></span>
+                                </div>
+                            </button>
+                        </div>
+                        
+                        <div v-if="userAnswers[q.id]" class="mt-4 animate-fade-in">
+                            <div v-if="userAnswers[q.id] === q.correctAnswer" class="p-4 bg-green-50 border border-green-200 rounded-xl flex gap-3 items-start">
+                                <span class="text-green-600 text-xl leading-none">✅</span>
+                                <div>
+                                    <strong class="text-green-800 block mb-1">Chính xác!</strong>
+                                    <span class="text-green-700 text-sm" v-html="getFeedback(q, q.correctAnswer)"></span>
+                                </div>
+                            </div>
+                            <div v-else class="p-4 bg-red-50 border border-red-200 rounded-xl flex gap-3 items-start">
+                                <span class="text-red-600 text-xl leading-none">❌</span>
+                                <div>
+                                    <strong class="text-red-800 block mb-1">Chưa đúng!</strong>
+                                    <span class="text-red-700 text-sm" v-html="getFeedback(q, userAnswers[q.id])"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const app = Vue.createApp({
+            data() {
+                return {
+                    tabs: [
+                        { id: 1, name: '1. Khởi động' },
+                        { id: 2, name: '2. Lý thuyết' },
+                        { id: 3, name: '3. Mô phỏng' },
+                        { id: 4, name: '4. Trắc nghiệm' }
+                    ],
+                    activeTab: 1,
+                    myChart: null,
+
+                    poolItems: [
+                        { id: 'item_1', name: 'Khoảng cách đỉnh sóng $(\\lambda)$', correctZone: 'zone_ux' },
+                        { id: 'item_2', name: 'Chu kì thời gian $(T)$', correctZone: 'zone_ut' },
+                        { id: 'item_3', name: '$v = \\lambda \\cdot f$', correctZone: 'zone_formula' },
+                        { id: 'item_4', name: '$v = \\frac{\\lambda}{T}$', correctZone: 'zone_formula' }
+                    ],
+                    conceptZones: [
+                        { id: 'zone_ux', title: 'Đọc Đồ thị Không gian (u - x)', bgClass: 'bg-blue-50 border-blue-200 text-blue-900', items: [] },
+                        { id: 'zone_ut', title: 'Đọc Đồ thị Thời gian (u - t)', bgClass: 'bg-teal-50 border-teal-200 text-teal-900', items: [] },
+                        { id: 'zone_formula', title: 'Rút ra Tốc độ (Tam giác CT)', bgClass: 'bg-purple-50 border-purple-200 text-purple-900', items: [] }
+                    ],
+
+                    chartMode: 'ux',
+                    simLambda: 2.0,
+                    simF: 1.0,
+
+                    userAnswers: {},
+                    
+                    // DỮ LIỆU ĐÃ FIX TRÍCH CHÍNH XÁC TỪ SGK BÀI 14 (TRANG 25-27)
+                    quizData: [
+                        {
+                            id: 1,
+                            question: "Một sóng âm có tần số $192\\text{ Hz}$ và truyền đi được quãng đường $91,4\\text{ m}$ trong $0,27\\text{ s}$. Bước sóng của sóng âm này xấp xỉ bằng: <br><em class='text-sm text-gray-500'>(Dựa theo Ví dụ 1 - SGK trang 25)</em>",
+                            options: [
+                                { key: 'A', text: "$1,76\\text{ m}$", feedback: "Chính xác! Tốc độ $v = \\frac{s}{t} = \\frac{91,4}{0,27} \\approx 338,5\\text{ m/s}$. Bước sóng $\\lambda = \\frac{v}{f} = \\frac{338,5}{192} \\approx 1,76\\text{ m}$." },
+                                { key: 'B', text: "$338,5\\text{ m}$", feedback: "Lỗi nhầm đại lượng! Giá trị $338,5$ bạn vừa tính ra là tốc độ truyền sóng $v$ (đơn vị $\\text{m/s}$), chứ chưa phải là bước sóng $\\lambda$." },
+                                { key: 'C', text: "$65000\\text{ m}$", feedback: "Lỗi nhầm công thức! Bạn đã lấy tốc độ $v$ nhân với tần số $f$. Muốn tìm bước sóng $\\lambda$ phải làm phép chia $\\frac{v}{f}$." },
+                                { key: 'D', text: "$0,56\\text{ m}$", feedback: "Lỗi sai thứ tự phép chia! Bạn đã lấy tần số chia cho tốc độ, công thức đúng là $\\lambda = \\frac{v}{f}$." }
+                            ],
+                            correctAnswer: 'A'
+                        },
+                        {
+                            id: 2,
+                            question: "Cần rung dao động tạo sóng mặt nước với tần số $50\\text{ Hz}$. Bán kính của 2 gợn sóng hình tròn liên tiếp đo được lần lượt là $12,4\\text{ cm}$ và $14,3\\text{ cm}$. Tốc độ truyền sóng là: <br><em class='text-sm text-gray-500'>(Dựa theo Ví dụ 2 - SGK trang 25)</em>",
+                            options: [
+                                { key: 'A', text: "$95\\text{ cm/s}$", feedback: "Tuyệt vời! Khoảng cách 2 gợn sóng liên tiếp chính là bước sóng: $\\lambda = 14,3 - 12,4 = 1,9\\text{ cm}$. Vận tốc: $v = \\lambda \\cdot f = 1,9 \\cdot 50 = 95\\text{ cm/s}$." },
+                                { key: 'B', text: "$95\\text{ m/s}$", feedback: "Lỗi sai đơn vị! Kết quả phép nhân là $95$, nhưng đơn vị của bước sóng đang là $\\text{cm}$, nên vận tốc phải là $\\text{cm/s}$ chứ không phải $\\text{m/s}$." },
+                                { key: 'C', text: "$715\\text{ cm/s}$", feedback: "Lỗi xác định bước sóng! Bạn đã lấy luôn bán kính vòng ngoài ($14,3\\text{ cm}$) làm bước sóng. Bước sóng phải là hiệu số của 2 bán kính." },
+                                { key: 'D', text: "$1,9\\text{ cm/s}$", feedback: "Lỗi tính toán! Giá trị $1,9\\text{ cm}$ mới chỉ là bước sóng $\\lambda$, bạn quên chưa nhân với tần số $50\\text{ Hz}$." }
+                            ],
+                            correctAnswer: 'A'
+                        },
+                        {
+                            id: 3,
+                            question: "Đồ thị $(u-x)$ của một sóng hình sin cho thấy khoảng cách giữa 2 đỉnh sóng liên tiếp là $10\\text{ cm}$. Nếu tốc độ truyền sóng là $v = 1\\text{ m/s}$ thì tần số của sóng là: <br><em class='text-sm text-gray-500'>(Dựa theo đồ thị Ví dụ 3 - SGK trang 26)</em>",
+                            options: [
+                                { key: 'A', text: "$0,1\\text{ Hz}$", feedback: "Lỗi bẫy đơn vị! Bạn đã lấy vận tốc ($1\\text{ m/s}$) chia thẳng cho bước sóng ($10\\text{ cm}$) mà chưa đổi $10\\text{ cm}$ ra mét." },
+                                { key: 'B', text: "$10\\text{ Hz}$", feedback: "Chính xác! Bước sóng đọc từ đồ thị là $\\lambda = 10\\text{ cm} = 0,1\\text{ m}$. Tần số $f = \\frac{v}{\\lambda} = \\frac{1}{0,1} = 10\\text{ Hz}$." },
+                                { key: 'C', text: "$100\\text{ Hz}$", feedback: "Lỗi quy đổi và phép tính! Hãy chắc chắn bạn đổi $\\lambda = 10\\text{ cm} = 0,1\\text{ m}$ rồi thực hiện đúng phép chia $f = \\frac{v}{\\lambda}$." },
+                                { key: 'D', text: "$5\\text{ Hz}$", feedback: "Lỗi đọc đồ thị! Khoảng cách giữa hai đỉnh liên tiếp chính là toàn bộ bước sóng $\\lambda$, không cần phải chia đôi." }
+                            ],
+                            correctAnswer: 'B'
+                        },
+                        {
+                            id: 4,
+                            question: "Đồ thị $(u-x)$ của một sóng hình sin cho thấy khoảng cách giữa 2 đỉnh sóng liên tiếp là $50\\text{ cm}$. Nếu chu kì của sóng là $T = 1\\text{ s}$ thì tốc độ truyền sóng bằng: <br><em class='text-sm text-gray-500'>(Dựa theo Bài tập luyện tập 2 - SGK trang 27)</em>",
+                            options: [
+                                { key: 'A', text: "$25\\text{ cm/s}$", feedback: "Lỗi suy luận! Khoảng cách giữa 2 đỉnh liên tiếp đã là một bước sóng hoàn chỉnh ($\\lambda = 50\\text{ cm}$), bạn không cần chia đôi." },
+                                { key: 'B', text: "$50\\text{ m/s}$", feedback: "Lỗi sai đơn vị! Bước sóng là $50\\text{ cm}$, chu kì $1\\text{ s}$, nên kết quả phải là $50\\text{ cm/s}$ (hoặc $0,5\\text{ m/s}$)." },
+                                { key: 'C', text: "$0,5\\text{ cm/s}$", feedback: "Lỗi tính toán sai lệch! Hãy áp dụng trực tiếp công thức $v = \\frac{\\lambda}{T}$ với $\\lambda = 50\\text{ cm}$." },
+                                { key: 'D', text: "$50\\text{ cm/s}$", feedback: "Xuất sắc! Khoảng cách giữa 2 đỉnh liên tiếp là $\\lambda = 50\\text{ cm}$. Tốc độ truyền sóng: $v = \\frac{\\lambda}{T} = \\frac{50}{1} = 50\\text{ cm/s}$." }
+                            ],
+                            correctAnswer: 'D'
+                        }
+                    ]
+                };
+            },
+            computed: {
+                simT() {
+                    return Number((1 / this.simF).toFixed(2));
+                },
+                simV() {
+                    return Number((this.simLambda * this.simF).toFixed(2));
+                }
+            },
+            methods: {
+                selectTab(tabId) {
+                    this.activeTab = tabId;
+                    this.triggerMathJax();
+                },
+                selectAnswer(questionId, answerKey) {
+                    if (!this.userAnswers[questionId]) {
+                        this.userAnswers[questionId] = answerKey;
+                        this.triggerMathJax();
+                    }
+                },
+                getFeedback(question, answerKey) {
+                    const opt = question.options.find(o => o.key === answerKey);
+                    return opt ? opt.feedback : '';
+                },
+                triggerMathJax() {
+                    this.$nextTick(() => {
+                        if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                            MathJax.typesetPromise().catch((err) => console.log('MathJax Error:', err));
+                        }
+                    });
+                },
+
+                // --- CHART.JS LOGIC CHO ĐỒ THỊ KÉP ---
+                generateDualData() {
+                    const data = [];
+                    const limit = 10;
+                    const step = 0.05;
+                    
+                    if (this.chartMode === 'ux') {
+                        for (let x = 0; x <= limit; x += step) {
+                            data.push({ x: x, y: 5 * Math.sin((2 * Math.PI * x) / this.simLambda) });
+                        }
+                    } else {
+                        let T = this.simT;
+                        for (let t = 0; t <= limit; t += step) {
+                            data.push({ x: t, y: 5 * Math.sin((2 * Math.PI * t) / T) });
+                        }
+                    }
+                    return data;
+                },
+
+                switchChartMode() {
+                    if (!this.myChart) return;
+                    const isUX = this.chartMode === 'ux';
+                    this.myChart.options.scales.x.title.text = isUX ? 'Khoảng cách x (m)' : 'Thời gian t (s)';
+                    this.updateWaveChart();
+                },
+
+                initWaveChart() {
+                    const canvas = document.getElementById('dualWaveChart');
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    
+                    this.myChart = Vue.markRaw(new Chart(ctx, {
+                        type: 'scatter',
+                        data: {
+                            datasets: [{
+                                label: 'Li độ sóng (u)',
+                                data: this.generateDualData(),
+                                showLine: true,
+                                borderColor: '#0d9488',
+                                backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                                borderWidth: 3,
+                                pointRadius: 0,
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: false,
+                            scales: {
+                                x: {
+                                    type: 'linear', 
+                                    min: 0, max: 10,
+                                    title: { display: true, text: 'Khoảng cách x (m)', font: { weight: 'bold', size: 14 } },
+                                    grid: { display: false }
+                                },
+                                y: {
+                                    type: 'linear', 
+                                    min: -8, max: 8,
+                                    title: { display: true, text: 'Li độ u (cm)', font: { weight: 'bold', size: 14 } },
+                                    grid: { 
+                                        color: (ctx) => ctx.tick.value === 0 ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.05)', 
+                                        lineWidth: (ctx) => ctx.tick.value === 0 ? 2 : 1 
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { enabled: false }
+                            }
+                        }
+                    }));
+                },
+                
+                updateWaveChart() {
+                    if (!this.myChart) return;
+                    this.myChart.data.datasets[0].data = this.generateDualData();
+                    this.myChart.update('none');
+                }
+            },
+            mounted() {
+                this.initWaveChart();
+                this.triggerMathJax();
+            },
+            updated() {
+                this.triggerMathJax();
+            }
+        });
+
+        app.component('draggable', window.vuedraggable);
+        app.mount('#app');
+    </script>
+</body>
+</html>
